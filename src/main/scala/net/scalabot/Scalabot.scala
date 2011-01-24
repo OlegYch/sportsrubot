@@ -1,3 +1,5 @@
+package net.scalabot
+
 import org.jibble.pircbot.PircBot
 
 object Scalabot extends PircBot {

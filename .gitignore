@@ -1,1 +1,14 @@
-*.class
+*~
+.classpath
+.project
+.scala_dependencies
+.idea/
+*.iml
+target/
+lib_managed/
+project/boot/
+project/build/target/
+project/plugins/target/
+project/plugins/lib_managed/
+project/plugins/src_managed/
+
