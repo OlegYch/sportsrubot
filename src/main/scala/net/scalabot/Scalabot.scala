@@ -1,8 +1,7 @@
 package net.scalabot
 
 import org.jibble.pircbot.PircBot
-
-object Scalabot extends PircBot {
+object Scalabot extends PircBot with Interpreter {
   def main(args: Array[String]) {
     setName("scalabot")
     setVerbose(true)
@@ -17,7 +16,7 @@ object Scalabot extends PircBot {
   }
 
   override def onDisconnect {
-    while (true)
+    while (true) {
       try {
         connect()
         return
@@ -27,6 +26,7 @@ object Scalabot extends PircBot {
           e.printStackTrace
           Thread sleep 30000
       }
+    }
   }
 
   override def onPrivateMessage(sender: String, login: String, hostname: String, message: String) {
@@ -37,38 +37,25 @@ object Scalabot extends PircBot {
     import java.io._
     import java.net._
     println("Channel = " + channel)
-    if (sender == "lambdabot" || sender == "lambdac")
+    if (sender == "lambdabot" || sender == "lambdac") {
       return
+    }
     if (message.startsWith(getName() + ": ")) {
-      //2-8.latest.scala-tweets.appspot.com/interp?bot=irc&code=...
-      val url = new URL("http://www.simplyscala.com/interp?bot=irc&code=" + URLEncoder.encode(message.substring((getName + ": ").length), "UTF-8"))
-      val reader = new BufferedReader(new InputStreamReader(url.openConnection.getInputStream, "UTF-8"))
-      try {
-        for (i <- 1 to 2) {
-          var line = reader.readLine
-          println("line = " + line)
-          if (line == "warning: there were deprecation warnings; re-run with -deprecation for details") line = reader.readLine
-          if (line == "warning: there were unchecked warnings; re-run with -unchecked for details") {
-            sendMessage(channel, line);
-            line = reader.readLine
-          }
-          if (line == "New interpreter instance being created for you, this may take a few seconds." || line == "Please be patient.") {
-            onMessage(channel, sender, login, hostname, message)
-            return
-          }
-          sendMessage(channel, line.replaceAll("^res[0-9]+: ", ""))
-        }
-      }
-      finally {
-        reader.close
+      val interpreted = interpret(message.substring((getName + ": ").length))
+      if (interpreted isEmpty) {
+        //retry
+        onMessage(channel = channel, sender = sender, login = login, hostname = hostname, message = message)
+      } else {
+        interpreted.foreach(sendMessage(channel, _))
       }
     }
     if (message.contains(" #") || message.startsWith("#") && !getUsers(channel).exists(_.getNick == "scala-tracbot")) {
       val number = message.replaceAll("^[^#]*#", "").replaceAll("([^0-9].*)?", "")
       if (number.length >= 3) {
         val url = "http://lampsvn.epfl.ch/trac/scala/ticket/" + number
-        if (!url.endsWith("/"))
+        if (!url.endsWith("/")) {
           sendMessage(channel, "Perhaps you meant " + url)
+        }
       }
     }
 
@@ -76,8 +63,9 @@ object Scalabot extends PircBot {
       val number = message.replaceAll("^[^r]*r", "").replaceAll("([^0-9].*)?", "")
       if (number.length >= 5) {
         val url = "http://lampsvn.epfl.ch/trac/scala/changeset/" + number
-        if (!url.endsWith("/"))
+        if (!url.endsWith("/")) {
           sendMessage(channel, "That revision can be found at " + url)
+        }
         val reader = new BufferedReader(new InputStreamReader(new URL(url).openConnection.getInputStream, "UTF-8"))
         var line = reader.readLine
         while (line != null) {
