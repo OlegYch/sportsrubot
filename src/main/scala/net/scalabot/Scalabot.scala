@@ -11,7 +11,7 @@ object Scalabot extends PircBot {
   }
 
   def connect() {
-    connect("solo.bynets.org", 6667)
+    connect("irc.tut.by", 6667)
     //    identify("password")
     joinChannel("#java")
   }
