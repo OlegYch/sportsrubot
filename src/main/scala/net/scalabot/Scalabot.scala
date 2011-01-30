@@ -11,13 +11,9 @@ object Scalabot extends PircBot {
   }
 
   def connect() {
-    connect("irc.freenode.net")
-    identify("password")
-    joinChannel("#scala")
-    joinChannel("#functionaljava")
-    joinChannel("#learnanycomputerlanguage")
-    joinChannel("##jvm")
-    joinChannel("#scalatra")
+    connect("solo.bynets.org", 6667)
+    //    identify("password")
+    joinChannel("#java")
   }
 
   override def onDisconnect {
@@ -26,9 +22,10 @@ object Scalabot extends PircBot {
         connect()
         return
       }
-      catch { case e: Exception =>
-        e.printStackTrace
-        Thread sleep 30000
+      catch {
+        case e: Exception =>
+          e.printStackTrace
+          Thread sleep 30000
       }
   }
 
