@@ -2,7 +2,6 @@ package net.scalabot
 
 import collection.immutable.TreeMap
 import org.apache.commons.lang.StringUtils
-import collection.JavaConversions._
 
 /**
  * @author OlegYch
