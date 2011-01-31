@@ -28,24 +28,23 @@ trait SimplyscalaInterpreter {
     val response = req(conn => StaticRequest.tryParse(conn.getInputStream(), StaticRequest.readString _))
     cookie = response.newCookie
 
-    (StringUtils.split(response.result, "\r\n", 3)) flatMap {
-      line =>
-        println("line = " + line)
-        line match {
-          case "New interpreter instance being created for you, this may take a few seconds." => {
-            None
+    val result = StringUtils.split(response.result, "\r\n", 3)
+    if (result contains ("New interpreter instance being created for you, this may take a few seconds.")) {
+      Seq()
+    } else {
+      result flatMap {
+        line =>
+          println("line = " + line)
+          line match {
+            case "warning: there were deprecation warnings; re-run with -deprecation for details" => {
+              None
+            }
+            case "warning: there were unchecked warnings; re-run with -unchecked for details" => {
+              Some("Uncheked operations in your code!")
+            }
+            case line => Some(line)
           }
-          case "Please be patient." => {
-            None
-          }
-          case "warning: there were deprecation warnings; re-run with -deprecation for details" => {
-            None
-          }
-          case "warning: there were unchecked warnings; re-run with -unchecked for details" => {
-            Some("Uncheked operations in your code!")
-          }
-          case line => Some(line)
-        }
+      }
     }
   }
 }
