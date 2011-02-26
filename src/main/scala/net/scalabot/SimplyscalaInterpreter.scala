@@ -29,8 +29,8 @@ trait SimplyscalaInterpreter {
     cookie = response.newCookie
 
     val result = StringUtils.split(response.result, "\r\n", 3)
-    if (result contains ("New interpreter instance being created for you, this may take a few seconds.")) {
-      Seq()
+    if (result startsWith ("New interpreter instance being created for you, this may take a few seconds.")) {
+      interpretCode(message)
     } else {
       result flatMap {
         line =>
