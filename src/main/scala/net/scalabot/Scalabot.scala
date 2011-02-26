@@ -78,11 +78,9 @@ object Scalabot extends Interpreter {
     ignoreDisconnect = false
   }
 
-  trait MessagesHandler {
-    self: PircBot =>
-
+  trait MessagesHandler extends PircBot {
     override def onPrivateMessage(sender: String, login: String, hostname: String, message: String) {
-      this.onMessage(sender, sender, login, hostname, getName() + ": " + message)
+      onMessage(sender, sender, login, hostname, getName() + ": " + message)
     }
 
     override def onMessage(channel: String, sender: String, login: String, hostname: String, message: String) {
