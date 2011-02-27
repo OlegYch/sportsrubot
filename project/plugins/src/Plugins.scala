@@ -6,5 +6,5 @@ class Plugins(info: ProjectInfo) extends PluginDefinition(info) {
 
   // adds "idea" command to generate idea project definition from sbt project definition
   lazy val sbtIdeaRepo = "sbt-idea-repo" at "http://mpeltonen.github.com/maven/"
-  lazy val sbtIdea = "com.github.mpeltonen" % "sbt-idea-plugin" % "0.2.0"
+  lazy val sbtIdea = "com.github.mpeltonen" % "sbt-idea-plugin" % "0.3.0"
 }
