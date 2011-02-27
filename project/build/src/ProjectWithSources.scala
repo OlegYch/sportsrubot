@@ -7,7 +7,11 @@ import sbt._
  * @author OlegYch
  */
 
-trait ProjectWithSources extends BasicManagedProject {
+trait ProjectWithSources {
+  val self: BasicManagedProject
+
+  import self._
+
   val UpdateDescription =
     "Resolves and retrieves automatically managed dependencies (including sources)."
 
@@ -38,10 +42,11 @@ trait ProjectWithSources extends BasicManagedProject {
   def addSources(getReport: => ResolveReport, md: DefaultModuleDescriptor): Unit = {
     val initialReport = getReport
     def deps(report: ResolveReport): Seq[IvyNode] = Buffer(report.getDependencies.asInstanceOf[ju.List[IvyNode]])
-    log.info("Adding sources for " + deps(initialReport).toString)
+    def artifacts(report: ResolveReport): Seq[Artifact] = Buffer(report.getArtifacts.asInstanceOf[ju.List[Artifact]])
+    log.info("Adding sources for " + artifacts(initialReport).toString)
     deps(initialReport).foreach((node: IvyNode) => md.addDependency(srcDependency(node)))
     val newReport = getReport
-    log.info("Added sources " + deps(newReport).toString)
+    log.info("Added sources " + artifacts(newReport).toString)
     return newReport
   }
 
