@@ -89,7 +89,7 @@ object Scalabot extends Interpreter {
         return
       }
       if (message.startsWith(getName() + ": ")) {
-        val interpreted = interpret(message.substring((getName + ": ").length))
+        val interpreted = interpret(Message(message.substring((getName + ": ").length), sender, getUsers(channel).map(_.getNick)))
         interpreted.foreach(sendMessage(channel, _))
       }
     }

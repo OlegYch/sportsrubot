@@ -36,9 +36,9 @@ trait Interpreter {
     }
   )
 
-  def interpret(command: String): Seq[String] = {
-    commands.find(_ matches command) match {
-      case Some(Command(_, f)) => f(StringUtils.split(command).drop(1).toList)
+  def interpret(command: Message): Seq[String] = {
+    commands.find(_ matches command.message) match {
+      case Some(Command(_, f)) => f(StringUtils.split(command.message).drop(1).toList)
       case None => interpreters(currentSession).interpretCode(command)
     }
   }
@@ -70,5 +70,6 @@ trait Interpreter {
   def changeSessionMessage(oldSession: Int): List[String] = {
     List("Old session id %s".format(oldSession), "New session id %s".format(currentSession))
   }
-
 }
+
+case class Message(message: String, sender: String, users: Seq[String])

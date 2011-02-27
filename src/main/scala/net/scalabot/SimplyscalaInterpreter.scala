@@ -1,7 +1,5 @@
 package net.scalabot
 
-import java.net.HttpURLConnection
-import collection.JavaConversions._
 import scalaj.http.Http._
 import org.apache.commons.lang.StringUtils
 
@@ -11,6 +9,11 @@ import org.apache.commons.lang.StringUtils
 trait SimplyscalaInterpreter {
   val request = new PersistentRequest {
     def perform(req: Request): String = perform(req, conn => req.tryParse(conn.getInputStream(), req.readString _))
+  }
+
+  def interpretCode(message: Message): Seq[String] = {
+    interpretCode(Context.set(message))
+    interpretCode(message.message)
   }
 
   def interpretCode(message: String): Seq[String] = {
@@ -37,13 +40,14 @@ trait SimplyscalaInterpreter {
   }
 }
 
-trait PersistentRequest {
-  var cookie = ""
-
-  def perform[T](req: Request, processor: HttpURLConnection => T) = {
-    req.header("Cookie", cookie).process(conn => {
-      this.cookie = conn.getHeaderFields().getOrElse("Set-Cookie", asJavaList(List(cookie))).mkString("; ")
-      processor(conn)
-    })
-  }
+object Context {
+  def set(message: Message) = "val context = " +
+      <context>
+        <sender>
+          {message.sender}
+        </sender>{message.users.map(u =>
+        <user>
+          {u}
+        </user>)}
+      </context>.toString.replaceAll("\\r|\\n|\\s", "")
 }
