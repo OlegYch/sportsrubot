@@ -50,7 +50,7 @@ object Scalabot extends Interpreter {
     killBot
     currentBot = new Bot with MessagesHandler {
       setVerbose(true)
-      setEncoding("UTF-8")
+      setEncoding("cp1251")
 
       override def onDisconnect = if (!ignoreDisconnect) {
         tryConnect()

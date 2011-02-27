@@ -9,27 +9,15 @@ import org.apache.commons.lang.StringUtils
  * @author OlegYch
  */
 trait SimplyscalaInterpreter {
-  var cookie = ""
-
-  def withCookie[T](cookie: String, req: Request)(processor: HttpURLConnection => T) = {
-    req.header("Cookie", cookie).process(conn => {
-      new {
-        val result = processor(conn);
-        val newCookie = conn.getHeaderFields().getOrElse("Set-Cookie", asJavaList(List(cookie))).mkString("; ")
-      }
-    })
+  val request = new PersistentRequest {
+    def perform(req: Request): String = perform(req, conn => req.tryParse(conn.getInputStream(), req.readString _))
   }
 
-  object StaticRequest extends Request(null, null, null, null, null, null)
-
   def interpretCode(message: String): Seq[String] = {
-    val req = withCookie[String](cookie, get("http://www.simplyscala.com/interp").params(("bot", "irc"), ("code", message))) _
+    val response = request.perform(get("http://www.simplyscala.com/interp").params(("bot", "irc"), ("code", message)))
 
-    val response = req(conn => StaticRequest.tryParse(conn.getInputStream(), StaticRequest.readString _))
-    cookie = response.newCookie
-
-    val result = StringUtils.split(response.result, "\r\n", 3)
-    if (result startsWith ("New interpreter instance being created for you, this may take a few seconds.")) {
+    val result = StringUtils.split(response, "\r\n", 3)
+    if (result startsWith Seq("Please be patient.", "New interpreter instance being created for you, this may take a few seconds.")) {
       interpretCode(message)
     } else {
       result flatMap {
@@ -46,5 +34,16 @@ trait SimplyscalaInterpreter {
           }
       }
     }
+  }
+}
+
+trait PersistentRequest {
+  var cookie = ""
+
+  def perform[T](req: Request, processor: HttpURLConnection => T) = {
+    req.header("Cookie", cookie).process(conn => {
+      this.cookie = conn.getHeaderFields().getOrElse("Set-Cookie", asJavaList(List(cookie))).mkString("; ")
+      processor(conn)
+    })
   }
 }
