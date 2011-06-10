@@ -1,8 +1,9 @@
 import sbt._
-import de.element34.sbteclipsify._
+//import de.element34.sbteclipsify._
 
 class ProjectDefinition(info: ProjectInfo) extends DefaultProject(info)
-with Eclipsify with IdeaProject {
+//with Eclipsify with IdeaProject 
+{
   val self = this
   // compiler options
   override def compileOptions = Unchecked :: ExplainTypes :: super.compileOptions.toList
