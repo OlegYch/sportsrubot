@@ -2,13 +2,15 @@ package net.scalabot
 
 import scalaj.http.Http._
 import org.apache.commons.lang.StringUtils
+import scalaj.http.Http
+import org.apache.commons.lang.exception.ExceptionUtils
 
 /**
  * @author OlegYch
  */
 trait SimplyscalaInterpreter {
   val request = new PersistentRequest {
-    def perform(req: Request): String = perform(req, conn => req.tryParse(conn.getInputStream(), req.readString _))
+    def perform(req: Request): String = perform(req, conn => Http.tryParse(conn.getInputStream(), Http.readString _))
   }
 
   def interpretCode(message: Message): Seq[String] = {
@@ -16,7 +18,7 @@ trait SimplyscalaInterpreter {
     interpretCode(message.message)
   }
 
-  def interpretCode(message: String): Seq[String] = {
+  def interpretCode(message: String): Seq[String] = try {
     val response = request.perform(get("http://www.simplyscala.com/interp").params(("bot", "irc"), ("code", message)))
 
     val result = StringUtils.split(response, "\r\n", 3)
@@ -37,17 +39,19 @@ trait SimplyscalaInterpreter {
           }
       }
     }
+  } catch {
+    case e => println(ExceptionUtils.getFullStackTrace(e)); Seq()
   }
 }
 
 object Context {
   def set(message: Message) = "val context = " +
-      <context>
-        <sender>
-          {message.sender}
-        </sender>{message.users.map(u =>
-        <user>
-          {u}
-        </user>)}
-      </context>.toString.replaceAll("\\r|\\n|\\s", "")
+    <context>
+      <sender>
+        {message.sender}
+      </sender>{message.users.map(u =>
+      <user>
+        {u}
+      </user>)}
+    </context>.toString.replaceAll("\\r|\\n|\\s", "")
 }
