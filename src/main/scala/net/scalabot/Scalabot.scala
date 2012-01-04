@@ -3,7 +3,7 @@ package net.scalabot
 import org.jibble.pircbot.{NickAlreadyInUseException, PircBot}
 import util.control.Exception._
 
-object Scalabot extends Interpreter {
+object Scalabot extends Interpreter[MultibotInterpreter] {
 
   class Bot extends PircBot {
     def connectWithName(name: String) {
@@ -61,7 +61,7 @@ object Scalabot extends Interpreter {
   @volatile
   var ignoreDisconnect = false
 
-  def tryConnect(name: String = "scalabot", delay: Int = 1000) {
+  def tryConnect(name: String = "multibot", delay: Int = 1000) {
     ignoreDisconnect = true
     def reconnect(name: String = name) = {
       Thread.sleep(delay)
@@ -69,9 +69,9 @@ object Scalabot extends Interpreter {
       tryConnect(name, delay * 2 % 100000)
     }
     handling(classOf[NickAlreadyInUseException]).
-        by(_ => reconnect(name + "_")).
-        or(handling(classOf[Exception]).
-        by(e => {
+      by(_ => reconnect(name + "_")).
+      or(handling(classOf[Exception]).
+      by(e => {
       e.printStackTrace();
       reconnect()
     })).apply(connectWithName(name))
@@ -83,16 +83,19 @@ object Scalabot extends Interpreter {
       onMessage(sender, sender, login, hostname, getName() + ": " + message)
     }
 
-    override def onMessage(channel: String, sender: String, login: String, hostname: String, message: String) {
+    override def onMessage(channel: String, sender: String, login: String, hostname: String,
+                           message: String) {
       println("Channel = " + channel)
       if (sender == "lambdabot" || sender == "lambdac") {
         return
       }
       if (message.startsWith(getName() + ": ")) {
-        val interpreted = interpret(Message(message.substring((getName + ": ").length), sender, getUsers(channel).map(_.getNick)))
+        val interpreted = interpret(Message(channel, message.substring((getName + ": ").length), sender,
+          getUsers(channel).map(_.getNick)))
         interpreted.foreach(sendMessage(channel, _))
       }
     }
   }
 
+  def newInterpreter = new MultibotInterpreter {}
 }

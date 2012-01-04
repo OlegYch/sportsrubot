@@ -6,7 +6,7 @@ import org.apache.commons.lang.StringUtils
 /**
  * @author OlegYch
  */
-trait Interpreter {
+trait Interpreter[T <: CodeInterpreter] {
   type SessionId = Int
   var currentSession = 0
   var interpreters = TreeMap(currentSession -> newInterpreter)
@@ -63,13 +63,11 @@ trait Interpreter {
     }
   }
 
-  def newInterpreter: SimplyscalaInterpreter = {
-    new SimplyscalaInterpreter {}
-  }
+  def newInterpreter: T
 
   def changeSessionMessage(oldSession: Int): List[String] = {
     List("Old session id %s".format(oldSession), "New session id %s".format(currentSession))
   }
 }
 
-case class Message(message: String, sender: String, users: Seq[String])
+case class Message(channel: String, message: String, sender: String, users: Seq[String])
