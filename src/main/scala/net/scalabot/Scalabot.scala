@@ -5,6 +5,8 @@ import util.control.Exception._
 
 object Scalabot extends Interpreter[MultibotInterpreter] {
 
+  Heroku.init()
+
   class Bot extends PircBot {
     def connectWithName(name: String) {
       setName(name)
