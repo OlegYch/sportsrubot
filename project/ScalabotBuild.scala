@@ -1,5 +1,6 @@
 import sbt._
 import Keys._
+import com.typesafe.startscript.StartScriptPlugin
 
 object ScalabotBuild extends Build {
   def libs(scalaVersion: String) = Seq(
@@ -22,5 +23,8 @@ object ScalabotBuild extends Build {
 
   lazy val root = Project(id = "scalabot",
     base = file("."),
-    settings = Project.defaultSettings ++ Seq(libraryDependencies <<= (scalaVersion)(libs)))
+    settings = Project.defaultSettings ++ Seq(
+      libraryDependencies <<= (scalaVersion)(libs)
+    ) ++ StartScriptPlugin.startScriptForClassesSettings
+  )
 }
