@@ -1,1 +1,1 @@
-web: target/start net/scalabot/Scalabot
+worker: target/start net/scalabot/Scalabot
