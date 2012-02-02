@@ -13,7 +13,8 @@ object ScalabotBuild extends Build {
     "pircbot" % "pircbot" % "1.5.0",
     commons('io, "1.4"),
     commons('pool, "1.5.5"),
-    commons('lang, "2.5")
+    commons('lang, "2.5"),
+    "org.specs2" %% "specs2" % "1.7.1" % "test"
   )
 
   def commons(name: Symbol, version: String) = {

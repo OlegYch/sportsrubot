@@ -82,20 +82,16 @@ object Scalabot extends Interpreter[MultibotInterpreter] {
 
   trait MessagesHandler extends PircBot {
     override def onPrivateMessage(sender: String, login: String, hostname: String, message: String) {
-      onMessage(sender, sender, login, hostname, getName() + ": " + message)
+      onMessage(sender, sender, login, hostname, message)
     }
 
     override def onMessage(channel: String, sender: String, login: String, hostname: String,
                            message: String) {
-      println("Channel = " + channel)
       if (sender == "lambdabot" || sender == "lambdac") {
         return
       }
-      if (message.startsWith(getName() + ": ")) {
-        val interpreted = interpret(Message(channel, message.substring((getName + ": ").length), sender,
-          getUsers(channel).map(_.getNick)))
-        interpreted.foreach(sendMessage(channel, _))
-      }
+      val interpreted = interpret(Message(channel, message, sender, getUsers(channel).map(_.getNick)))
+      interpreted.foreach(sendMessage(channel, _))
     }
   }
 

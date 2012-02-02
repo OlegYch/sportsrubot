@@ -5,13 +5,11 @@ import dispatch._
 import java.io._
 
 trait MultibotInterpreter extends CodeInterpreter with ScalaInterpreter {
-  val BOTNAME = "multibot"
-  val BOTMSG = BOTNAME + ":"
   val NUMLINES = 5
   val INNUMLINES = 8
 
   def interpretCode(message: Message) = {
-    serve(Msg(message.sender, message.sender, "login", "jostname", message.message)).toSeq
+    serve(Msg(message.sender, message.sender, "login", "hostname", message.message))
   }
 
   object Cmd {
@@ -22,13 +20,10 @@ trait MultibotInterpreter extends CodeInterpreter with ScalaInterpreter {
     }
   }
 
-
-  def serve(msg: Msg): Iterable[String] = msg.message match {
-    case "@help" => Seq("(!) scala, (%) ruby, (,) clojure, (>>) haskell")
+  def serve(msg: Msg): Seq[String] = msg.message match {
+    case "@help" => Seq("'! scala'  '% ruby'  ', clojure' '>> haskell'")
 
     case Cmd("!" :: m :: Nil) => interpretScala(msg, m)
-
-    case Cmd(m :: Nil) => interpretScala(msg, m)
 
     case Cmd("!paste" :: m :: Nil) => // Http(url(m) >- {source => serve(msg.copy(message = "! " + source))})
       val conOut = new ByteArrayOutputStream
@@ -64,8 +59,8 @@ trait MultibotInterpreter extends CodeInterpreter with ScalaInterpreter {
       case "warning: there were deprecation warnings; re-run with -deprecation for details" |
            "warning: there were unchecked warnings; re-run with -unchecked for details" |
            "New interpreter instance being created for you, this may take a few seconds." |
-           "Please be patient." => None
-      case line => Some(line.replaceAll("^res[0-9]+: ", ""))
+           "Please be patient." => Seq()
+      case line => Seq(line.replaceAll("^res[0-9]+: ", ""))
     }
 
     case Cmd("," :: m :: Nil) => respondJSON(msg)(:/("try-clojure.org") / "eval.json" <<? Map("expr" -> m)) {
@@ -80,42 +75,41 @@ trait MultibotInterpreter extends CodeInterpreter with ScalaInterpreter {
       case e => Some("unexpected: " + e)
     }
 
-    case Cmd("%" :: m :: Nil) => respondJSON(msg)(:/("tryruby.org") / "/levels/1/challenges/0" <:<
+    case Cmd("%" :: m :: Nil) => respondJSON(msg)(:/("tryruby.org") / "levels/1/challenges/0" <:<
       Map("Accept" -> "application/json, text/javascript, */*; q=0.01",
         "Content-Type" -> "application/x-www-form-urlencoded; charset=UTF-8",
         "X-Requested-With" -> "XMLHttpRequest",
-        "Connection" -> "keep-alive") <<< "cmd=" + java.net.URLEncoder.encode(m, "UTF-8")) {
-      case Some(JSONObject(map)) => Some(
-        (if (map("success").toString.toBoolean) {
-          map("output")
-        } else {
-          map("result")
-        }).toString)
+        "Connection" -> "keep-alive") <<< Seq("cmd" -> m) >\ "UTF-8") {
+      case Some(JSONObject(map)) => Some(map("output").toString)
       case e => Some("unexpected" + e)
     }
 
-    case _ => Seq("Unknown command")
+    case _ => Seq()
   }
 
   val cookies = scala.collection.mutable.Map[String, String]()
 
-  def respondJSON(msg: Msg)(req: Request)(response: Option[JSONType] => Option[String]) =
-    respond(msg)(req)(line => response(JSON.parseRaw(line)))
+  def respondJSON(msg: Msg)(req: Request)(response: Option[JSONType] => Option[String]): Seq[String] =
+    respond(msg)(req)(line => response(JSON.parseRaw(line)).toSeq)
 
-  def respond(msg: Msg)(req: Request)(response: String => Iterable[String]): Iterable[String] = {
+  def respond(msg: Msg)(req: Request)(response: String => Seq[String]): Seq[String] = {
     val Msg(channel, sender, login, hostname, message) = msg
     val host = req.host
 
     val request = cookies.get(channel + host) map (c => req <:< Map("Cookie" -> c)) getOrElse req
 
-    val handler = request >+> {r =>
-      r >:> {headers =>
-        headers.get("Set-Cookie").foreach(h => h.foreach(c => cookies(channel + host) = c.split(";").head))
-        r >~ {source =>
-          source.getLines.take(NUMLINES).
-            flatMap(line => response(line).flatMap(_.split("\n").take(INNUMLINES))).toSeq
+    val handler = request >+> {
+      r =>
+        r >:> {
+          headers =>
+            headers.get("Set-Cookie")
+              .foreach(h => h.foreach(c => cookies(channel + host) = c.split(";").head))
+            r >~ {
+              source =>
+                source.getLines.take(NUMLINES).flatMap(response(_).flatMap(_.split("\n").take(INNUMLINES)))
+                  .toList
+            }
         }
-      }
     }
 
     (new Http with NoLogging).apply(handler)

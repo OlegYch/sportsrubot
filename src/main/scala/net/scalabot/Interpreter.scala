@@ -43,7 +43,8 @@ trait Interpreter[T <: CodeInterpreter] {
     }
   }
 
-  def help: List[String] = "Executes scala code" :: commands.map(c => c.commandString + " " + c.commandHelp)
+  def help: List[String] = "Executes code, see also @help" ::
+    commands.map(c => c.commandString + " " + c.commandHelp)
 
   def newSession: List[String] = {
     val oldSession = currentSession

@@ -44,7 +44,8 @@ trait ScalaInterpreter {
     override def checkPermission(perm: Permission) {
       if (activated) {
         val read = perm.getActions == ("read")
-        val allowedMethods = Seq("accessDeclaredMembers", "suppressAccessChecks").contains(perm.getName)
+        val allowedMethods = Seq("accessDeclaredMembers", "suppressAccessChecks", "createClassLoader",
+          "accessClassInPackage.sun.reflect").contains(perm.getName)
         val file = perm.isInstanceOf[FilePermission]
         val readClass = file && (perm.getName.endsWith(".class") || perm.getName.endsWith(".jar") || perm
           .getName.endsWith("library.properties")) && read
