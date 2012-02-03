@@ -12,25 +12,24 @@ class MultibotInterpreterSpec extends Specification {
 
   def msg(message: String) = Message(channel = "channel", message = message, sender = "", users = Nil)
 
-  def is = "multibot" ^
-    "should execute scala code" ! {
+  def is =
+    "multibot" ^ "should execute scala code" ! {
       val code = mutlibot.interpretCode(msg("! 1+1"))
       (code shouldEqual Seq(" res0: Int = 2"))
-    } ^
-    "should execute scala code with space" ! {
+    } ^ "should execute scala code with space" ! {
       val code = mutlibot.interpretCode(msg("! 1 + 1 "))
       code mustEqual Seq(" res0: Int = 2")
-    } ^
-    "should determine type" ! {
+    } ^ "should determine type" ! {
       val code = mutlibot.interpretCode(msg("!type Nil"))
       code mustEqual Seq("scala.collection.immutable.Nil.type")
-    } ^
-    "should execute haskell code" ! {
+    } ^ "should execute haskell code" ! {
       val code = mutlibot.interpretCode(msg(">> 1+1"))
       code mustEqual Seq("2 :: (Num t) => t")
-    } ^
-    "should execute ruby code" ! {
+    } ^ "should execute ruby code" ! {
       val code = mutlibot.interpretCode(msg("% 1+1"))
       code mustEqual Seq("=> 2")
+    } ^ "should execute clojure code" ! {
+      val code = mutlibot.interpretCode(msg(", (+ 1 1)"))
+      code mustEqual Seq("2")
     }
 }
