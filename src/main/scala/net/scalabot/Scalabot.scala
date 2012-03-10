@@ -13,6 +13,7 @@ object Scalabot extends Interpreter[MultibotInterpreter] {
       connect("irc.tut.by", 6667)
       //    identify("password")
       joinChannel("#java")
+      joinChannel("#programming")
     }
   }
 
