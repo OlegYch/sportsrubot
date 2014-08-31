@@ -1,26 +1,29 @@
 package net.scalabot
 
 import org.jibble.pircbot.{NickAlreadyInUseException, PircBot}
-import util.control.Exception._
+import org.openqa.selenium.WebDriver
+import org.openqa.selenium.htmlunit.HtmlUnitDriver
 
-object Scalabot extends Interpreter[MultibotInterpreter] {
+import scala.util.control.Exception._
 
-  Heroku.init()
+object Scalabot {
+
+  val channel = "#football-test"
+  //  val channel = "#football"
 
   class Bot extends PircBot {
     def connectWithName(name: String) {
       setName(name)
-      connect("irc.tut.by", 6667)
+      connect("irc.bynets.org", 6667)
       //    identify("password")
-      joinChannel("#java")
-      joinChannel("#programming")
+      joinChannel(channel)
     }
   }
 
   var currentBot: Bot = _
   val bot = Delegate.of(currentBot)
 
-  import bot._
+  import net.scalabot.Scalabot.bot._
 
   def main(args: Array[String]) {
     newBot
@@ -51,20 +54,56 @@ object Scalabot extends Interpreter[MultibotInterpreter] {
 
   def newBot {
     killBot
-    currentBot = new Bot with MessagesHandler {
+    currentBot = new Bot {bot =>
       setVerbose(true)
       setEncoding("cp1251")
 
       override def onDisconnect = if (!ignoreDisconnect) {
         tryConnect()
       }
+
+      new Thread {
+        var oldNews = news.drop(1).distinct.reverse
+
+        override def run() {
+          while (true) {
+            Thread.sleep(10 * 1000)
+            val newNews = news
+            newNews.takeWhile(!oldNews.contains(_)).reverse.foreach { m =>
+              sendMessage(channel, m)
+            }
+            oldNews ++= newNews
+            oldNews = oldNews.distinct
+            if (!bot.isConnected) return
+          }
+        }
+        setDaemon(true)
+        start()
+      }
     }
+  }
+
+
+  def news: List[String] = {
+    val f = new org.fluentlenium.adapter.IsolatedTest {
+      override def getDefaultDriver: WebDriver = new HtmlUnitDriver()
+    }
+    try {
+      import scala.collection.JavaConversions._
+      f.goTo("http://www.sports.ru/football/157318697.html")
+      val articles = f.find(".article-textBlock").find("p")
+      val result = articles.map(t => (t.getText, t.find("a").map(_.getAttribute("href")), t.find("img").map(_.getAttribute("src")))).map {
+        case (text, links, images) => text + " " + links.mkString(" ") + " " + images.mkString(" ")
+      }
+      println(result.mkString("\n"))
+      result.toList
+    } finally f.quit()
   }
 
   @volatile
   var ignoreDisconnect = false
 
-  def tryConnect(name: String = "multibot", delay: Int = 1000) {
+  def tryConnect(name: String = "спортсру", delay: Int = 1000) {
     ignoreDisconnect = true
     def reconnect(name: String = name) = {
       Thread.sleep(delay)
@@ -80,21 +119,4 @@ object Scalabot extends Interpreter[MultibotInterpreter] {
     })).apply(connectWithName(name))
     ignoreDisconnect = false
   }
-
-  trait MessagesHandler extends PircBot {
-    override def onPrivateMessage(sender: String, login: String, hostname: String, message: String) {
-      onMessage(sender, sender, login, hostname, message)
-    }
-
-    override def onMessage(channel: String, sender: String, login: String, hostname: String,
-                           message: String) {
-      if (sender == "lambdabot" || sender == "lambdac") {
-        return
-      }
-      val interpreted = interpret(Message(channel, message, sender, getUsers(channel).map(_.getNick)))
-      interpreted.foreach(sendMessage(channel, _))
-    }
-  }
-
-  def newInterpreter = new MultibotInterpreter {}
 }
