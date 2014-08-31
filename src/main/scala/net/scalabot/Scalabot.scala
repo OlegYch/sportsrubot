@@ -1,5 +1,6 @@
 package net.scalabot
 
+import org.fluentlenium.adapter.IsolatedTest
 import org.jibble.pircbot.{NickAlreadyInUseException, PircBot}
 import org.openqa.selenium.WebDriver
 import org.openqa.selenium.htmlunit.HtmlUnitDriver
@@ -8,8 +9,8 @@ import scala.util.control.Exception._
 
 object Scalabot {
 
-  val channel = "#football-test"
-  //  val channel = "#football"
+  //  val channel = "#football-test"
+  val channel = "#football"
 
   class Bot extends PircBot {
     def connectWithName(name: String) {
@@ -83,21 +84,37 @@ object Scalabot {
     }
   }
 
+  def news: List[String] = transferNews
+  def transferNews: List[String] = {
+    val f = xml.XML.load(new java.net.URL("http://www.sports.ru/stat/export/rss/taglenta.xml?id=1685207"))
+    val articles = f \\ "item"
+    val result = articles.flatMap { a =>
+      for {
+        name <- a \ "title"
+        url <- a \ "link"
+      } yield s"${name.text} http://${url.text}".replaceAll( """[\r\n]""", "")
+    }
+    result.toList
+  }
 
-  def news: List[String] = {
-    val f = new org.fluentlenium.adapter.IsolatedTest {
+  def withFluentlenium(f: IsolatedTest => List[String]) = {
+    val fluent = new org.fluentlenium.adapter.IsolatedTest {
       override def getDefaultDriver: WebDriver = new HtmlUnitDriver()
     }
     try {
-      import scala.collection.JavaConversions._
-      f.goTo("http://www.sports.ru/football/157318697.html")
-      val articles = f.find(".article-textBlock").find("p")
-      val result = articles.map(t => (t.getText, t.find("a").map(_.getAttribute("href")), t.find("img").map(_.getAttribute("src")))).map {
-        case (text, links, images) => text + " " + links.mkString(" ") + " " + images.mkString(" ")
-      }
+      val result = f(fluent)
       println(result.mkString("\n"))
-      result.toList
-    } finally f.quit()
+      result
+    } finally fluent.quit()
+  }
+  def deadlineNews: List[String] = withFluentlenium { f =>
+    import scala.collection.JavaConversions._
+    f.goTo("http://www.sports.ru/football/157318697.html")
+    val articles = f.find(".article-textBlock").find("p")
+    val result = articles.map(t => (t.getText, t.find("a").map(_.getAttribute("href")), t.find("img").map(_.getAttribute("src")))).map {
+      case (text, links, images) => text + " " + links.mkString(" ") + " " + images.mkString(" ")
+    }
+    result.toList
   }
 
   @volatile
