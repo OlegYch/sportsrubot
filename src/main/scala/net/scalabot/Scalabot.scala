@@ -92,7 +92,7 @@ object Scalabot {
       for {
         name <- a \ "title"
         url <- a \ "link"
-      } yield s"${name.text} http://${url.text}".replaceAll( """[\r\n]""", "")
+      } yield s"${name.text} http://${url.text}".replaceAll( """[\r\n]""", "").replaceAllLiterally("&laquo;", "\"").replaceAllLiterally("&raquo;", "\"")
     }
     result.toList
   }
