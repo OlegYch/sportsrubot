@@ -84,7 +84,7 @@ object Scalabot {
     }
   }
 
-  def news: List[String] = deadlineNews
+  def news: List[String] = transferNews
   def transferNews: List[String] = {
     val f = xml.XML.load(new java.net.URL("http://www.sports.ru/stat/export/rss/taglenta.xml?id=1685207"))
     val articles = f \\ "item"
@@ -106,6 +106,15 @@ object Scalabot {
       println(result.mkString("\n"))
       result
     } finally fluent.quit()
+  }
+  def footballbyNews: List[String] = withFluentlenium { f =>
+    import scala.collection.JavaConversions._
+    f.goTo("http://www.football.by/news/66360.html")
+    val articles = f.find(".newstext")
+    val result = articles.map(t => (t.getText, t.find("a").map(_.getAttribute("href")), t.find("img").map(_.getAttribute("src")))).map {
+      case (text, links, images) => text + " " + links.mkString(" ") + " " + images.mkString(" ")
+    }
+    result.toList
   }
   def deadlineNews: List[String] = withFluentlenium { f =>
     import scala.collection.JavaConversions._
