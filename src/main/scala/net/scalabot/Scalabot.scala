@@ -70,7 +70,7 @@ object Scalabot {
           while (true) {
             Thread.sleep(10 * 1000)
             val newNews = news
-            newNews.takeWhile(!oldNews.contains(_)).reverse.foreach { m =>
+            newNews.takeWhile(!oldNews.contains(_)).reverse.take(5).foreach { m =>
               sendMessage(channel, m)
             }
             oldNews ++= newNews
@@ -120,7 +120,7 @@ object Scalabot {
     import scala.collection.JavaConversions._
     f.goTo("http://www.sports.ru/tribuna/blogs/odukhevremeni/734774.html")
     val articles = f.find(".article-textBlock").find("p")
-    val result = articles.map(t => (t.getText, t.find("a").map(_.getAttribute("href")), t.find("img").map(_.getAttribute("src")))).map {
+    val result = articles.map(t => (t.getText, t.find("a").map(_.getAttribute("href")), (t.find("img") ++ t.find("iframe")).map(_.getAttribute("src")))).map {
       case (text, links, images) => text + " " + links.mkString(" ") + " " + images.mkString(" ")
     }
     result.toList.filterNot(_ contains "Sports.ru следит за всем, что окружает трансферный дедлайн в Европе.")
