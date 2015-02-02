@@ -102,9 +102,7 @@ object Scalabot {
       override def getDefaultDriver: WebDriver = new HtmlUnitDriver()
     }
     try {
-      val result = f(fluent)
-      println(result.mkString("\n"))
-      result
+      f(fluent)
     } finally fluent.quit()
   }
   def footballbyNews: List[String] = withFluentlenium { f =>
@@ -123,7 +121,9 @@ object Scalabot {
     val result = articles.map(t => (t.getText, t.find("a").map(_.getAttribute("href")), (t.find("img") ++ t.find("iframe")).map(_.getAttribute("src")))).map {
       case (text, links, images) => text + " " + links.mkString(" ") + " " + images.mkString(" ")
     }
-    result.toList.filterNot(_ contains "Sports.ru следит за всем, что окружает трансферный дедлайн в Европе.")
+    result.toList
+      .filterNot(_ contains "Sports.ru следит за всем, что окружает трансферный дедлайн в Европе.")
+      .filterNot(_.trim.isEmpty)
   }
 
   @volatile
