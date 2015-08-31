@@ -1,6 +1,7 @@
 package net.scalabot
 
 import org.fluentlenium.adapter.IsolatedTest
+import org.fluentlenium.core.domain.FluentWebElement
 import org.jibble.pircbot.{NickAlreadyInUseException, PircBot}
 import org.openqa.selenium.WebDriver
 import org.openqa.selenium.htmlunit.HtmlUnitDriver
@@ -9,7 +10,7 @@ import scala.util.control.Exception._
 
 object Scalabot {
 
-//    val channel = "#football-test"
+//      val channel = "#football-test"
   val channel = "#football"
 
   class Bot extends PircBot {
@@ -55,7 +56,8 @@ object Scalabot {
 
   def newBot {
     killBot
-    currentBot = new Bot {bot =>
+    currentBot = new Bot {
+      bot =>
       setVerbose(true)
       setEncoding("cp1251")
 
@@ -78,6 +80,7 @@ object Scalabot {
             if (!bot.isConnected) return
           }
         }
+
         setDaemon(true)
         start()
       }
@@ -85,6 +88,7 @@ object Scalabot {
   }
 
   def news: List[String] = uadeadlineNews
+
   def transferNews: List[String] = {
     val f = xml.XML.load(new java.net.URL("http://www.sports.ru/stat/export/rss/taglenta.xml?id=1685207"))
     val articles = f \\ "item"
@@ -105,6 +109,7 @@ object Scalabot {
       f(fluent)
     } finally fluent.quit()
   }
+
   def footballbyNews: List[String] = withFluentlenium { f =>
     import scala.collection.JavaConversions._
     f.goTo("http://www.football.by/news/66360.html")
@@ -114,6 +119,7 @@ object Scalabot {
     }
     result.toList
   }
+
   def deadlineNews: List[String] = withFluentlenium { f =>
     import scala.collection.JavaConversions._
     f.goTo("http://www.sports.ru/tribuna/blogs/odukhevremeni/734774.html")
@@ -129,9 +135,23 @@ object Scalabot {
   def uadeadlineNews: List[String] = withFluentlenium { f =>
     import scala.collection.JavaConversions._
     f.goTo("http://www.ua-football.com/foreign/transfers/1440964889-transfernyy-dedlayn-podrobnyy-onlayn-dvuh-poslednih-dney.html")
-    val articles = f.find(".block_text").find("p").filterNot(_.find("strong").isEmpty)
-    val result = articles.map(t => (t.getText, t.find("a").map(_.getAttribute("href")), (t.find("img") ++ t.find("iframe")).map(_.getAttribute("src")))).map {
-      case (text, links, images) => text + " " + links.mkString(" ") + " " + images.mkString(" ")
+    val articles = f.find(".block_text").find("p")
+    case class News(t: FluentWebElement) {
+      val hasDate = t.find("strong").nonEmpty
+      val links = {
+        t.find("a").map(_.getAttribute("href"))
+      }
+      val images = {
+        (t.find("img") ++ t.find("iframe")).map(_.getAttribute("src"))
+      }
+      val text = t.getText
+      override val toString = text + " " + links.mkString(" ") + " " + images.mkString(" ")
+    }
+    val news = articles.map(t => News(t))
+    val imagesResorted = news.zipWithIndex.sortBy { case (n, i) => if (n.images.nonEmpty) i * 2 - 3 else i * 2 }.map(_._1)
+    println(imagesResorted.mkString("\n"))
+    val result = imagesResorted.collect {
+      case n if n.hasDate || n.images.nonEmpty => n.toString
     }
     result.toList
       .filterNot(_.trim.isEmpty)
@@ -150,10 +170,10 @@ object Scalabot {
     handling(classOf[NickAlreadyInUseException]).
       by(_ => reconnect(name + "_")).
       or(handling(classOf[Exception]).
-      by(e => {
-      e.printStackTrace();
-      reconnect()
-    })).apply(connectWithName(name))
+        by(e => {
+          e.printStackTrace();
+          reconnect()
+        })).apply(connectWithName(name))
     ignoreDisconnect = false
   }
 }
