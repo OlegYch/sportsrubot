@@ -9,7 +9,7 @@ import scala.util.control.Exception._
 
 object Scalabot {
 
-  //  val channel = "#football-test"
+//    val channel = "#football-test"
   val channel = "#football"
 
   class Bot extends PircBot {
@@ -84,7 +84,7 @@ object Scalabot {
     }
   }
 
-  def news: List[String] = deadlineNews
+  def news: List[String] = uadeadlineNews
   def transferNews: List[String] = {
     val f = xml.XML.load(new java.net.URL("http://www.sports.ru/stat/export/rss/taglenta.xml?id=1685207"))
     val articles = f \\ "item"
@@ -123,6 +123,17 @@ object Scalabot {
     }
     result.toList
       .filterNot(_ contains "Sports.ru следит за всем, что окружает трансферный дедлайн в Европе.")
+      .filterNot(_.trim.isEmpty)
+  }
+
+  def uadeadlineNews: List[String] = withFluentlenium { f =>
+    import scala.collection.JavaConversions._
+    f.goTo("http://www.ua-football.com/foreign/transfers/1440964889-transfernyy-dedlayn-podrobnyy-onlayn-dvuh-poslednih-dney.html")
+    val articles = f.find(".block_text").find("p").filterNot(_.find("strong").isEmpty)
+    val result = articles.map(t => (t.getText, t.find("a").map(_.getAttribute("href")), (t.find("img") ++ t.find("iframe")).map(_.getAttribute("src")))).map {
+      case (text, links, images) => text + " " + links.mkString(" ") + " " + images.mkString(" ")
+    }
+    result.toList
       .filterNot(_.trim.isEmpty)
   }
 
