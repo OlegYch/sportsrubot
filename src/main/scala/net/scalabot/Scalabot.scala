@@ -87,7 +87,8 @@ object Scalabot {
     }
   }
 
-  def news: List[String] = uadeadlineNews
+  def news: List[String] = deadlineNews
+//  def news: List[String] = uadeadlineNews
 
   def transferNews: List[String] = {
     val f = xml.XML.load(new java.net.URL("http://www.sports.ru/stat/export/rss/taglenta.xml?id=1685207"))
@@ -122,20 +123,20 @@ object Scalabot {
 
   def deadlineNews: List[String] = withFluentlenium { f =>
     import scala.collection.JavaConversions._
-    f.goTo("http://www.sports.ru/tribuna/blogs/odukhevremeni/734774.html")
+    f.goTo("http://www.sports.ru/tribuna/blogs/england/826569.html")
     val articles = f.find(".article-textBlock").find("p")
-    val result = articles.map(t => (t.getText, t.find("a").map(_.getAttribute("href")), (t.find("img") ++ t.find("iframe")).map(_.getAttribute("src")))).map {
-      case (text, links, images) => text + " " + links.mkString(" ") + " " + images.mkString(" ")
-    }
-    result.toList
-      .filterNot(_ contains "Sports.ru следит за всем, что окружает трансферный дедлайн в Европе.")
-      .filterNot(_.trim.isEmpty)
+    parseNews(articles)
   }
 
   def uadeadlineNews: List[String] = withFluentlenium { f =>
     import scala.collection.JavaConversions._
     f.goTo("http://www.ua-football.com/foreign/transfers/1440964889-transfernyy-dedlayn-podrobnyy-onlayn-dvuh-poslednih-dney.html")
     val articles = f.find(".block_text").find("p")
+    parseNews(articles)
+  }
+
+  def parseNews(articles: Seq[FluentWebElement]) = {
+    import scala.collection.JavaConversions._
     case class News(t: FluentWebElement) {
       val hasDate = t.find("strong").nonEmpty
       val links = {
@@ -155,6 +156,7 @@ object Scalabot {
     }
     result.toList
       .filterNot(_.trim.isEmpty)
+      .flatMap(s => s.grouped(400).toList.reverse)
   }
 
   @volatile
